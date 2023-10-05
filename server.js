@@ -57,7 +57,7 @@ const mainMenu = () => {
       if (choices === "View basic chain info") {
         viewBasicInfo();
       }
-      if (choices === "View chain info with number of stores and sale") {
+      if (choices === "View chain info with number of stores and sales") {
         viewChainInfo();
       }
       if (choices === "View store info with employee data") {
@@ -138,9 +138,9 @@ viewBasicInfo = () => {
 
 viewChainInfo = () => {
   console.log("Showing Chain info with number of stores and sale figures..\n");
-  const sql = `SELECT chain.id AS "Chain ID", chain.chain_name AS "Chain name", chain.chain_description AS "Chain Description", chain.chain_established AS "Chain Established", chain.chain_headquarters AS "Chain Headquarters", COUNT(store.id) AS "Number of Stores", SUM(sale.sale_value) AS "Total Sales" FROM chain
-  LEFT JOIN store ON chain.id = store.chain_id
-  LEFT JOIN sale ON store.id = sale.store_id
+  const sql = `SELECT chain.id AS "Chain ID", chain.chain_name AS "Chain name", chain.chain_description AS "Chain Description", chain.chain_established AS "Chain Established", chain.chain_headquarters AS "Chain Headquarters", COUNT(store.id) AS "Number of Stores", SUM(sale.sale_total) FROM chain
+  LEFT JOIN store ON chain.id = store.store_parent
+  LEFT JOIN sale ON store.id = sale.sale_store
   GROUP BY chain.id
   ORDER BY chain.id`;
   connection.query(sql, (err, resp) => {
@@ -276,7 +276,7 @@ addStore = () => {
       {
         type: "input",
         name: "store_open",
-        message: "When did the store open?",
+        message: "When did the store open?(YYYY-MM-DD)",
       },
       {
         type: "input",
@@ -296,4 +296,182 @@ addStore = () => {
         }
       );
     });
+};
+
+addEmployee = () => {
+  console.log("Adding a new employee..\n");
+  const sql = `INSERT INTO employee (employee_name, hired_date, contact_number, store_id) 
+  VALUES (?, ?, ?, ?)`;
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "employee_name",
+        message: "What is the employee's full name?",
+      },
+      {
+        type: "input",
+        name: "hired_date",
+        message: "When was the employee hired? (YYYY-MM-DD)",
+      },
+      {
+        type: "input",
+        name: "contact_number",
+        message: "What is the employee's contact number?",
+      },
+      {
+        type: "input",
+        name: "store_id",
+        message: "What is this employee's store ID?",
+      },
+    ])
+    .then((answers) => {
+      const { employee_name, hired_date, contact_number, store_id } = answers;
+      connection.query(
+        sql,
+        [employee_name, hired_date, contact_number, store_id],
+        (err, resp) => {
+          if (err) throw err;
+          console.log("New employee has been added!");
+          viewEmployeeData();
+        }
+      );
+    });
+};
+
+addItem = () => {
+  console.log("Adding a new item..\n");
+  const sql = `INSERT INTO item (item_name, item_description, item_price)
+  VALUES (?, ?, ?,)`;
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "item_name",
+        message: "What is this item called?",
+      },
+      {
+        type: "input",
+        name: "item_description",
+        message: "Give a brief description of the item.",
+      },
+      {
+        type: "input",
+        name: "item_price",
+        message: "How much does the item cost?",
+      },
+    ])
+    .then((answers) => {
+      const { item_name, item_description, item_price } = answers;
+      connection.query(
+        sql,
+        [item_name, item_description, item_price],
+        (err, resp) => {
+          if (err) throw err;
+          console.log("New item has been added!");
+          viewItems();
+        }
+      );
+    });
+};
+
+addSale = () => {
+  console.log("Adding a new sale..\n");
+  const sql = `INSERT INTO sale (sale_date, sale_employee, sale_store, sale_item, sale_item_two, sale_item_three, sale_item_four, sale_item_five, sale_total)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "sale_date",
+        message: "Enter date of transacion (YYYY-MM-DD)",
+      },
+      {
+        type: "input",
+        name: "sale_employee",
+        message: "Enter employee ID",
+      },
+      {
+        type: "input",
+        name: "sale_store",
+        message: "Enter store ID",
+      },
+      {
+        type: "input",
+        name: "sale_item",
+        message: "Enter item ID",
+      },
+      {
+        type: "input",
+        name: "sale_item_two",
+        message: "Enter next item ID if applicable",
+      },
+      {
+        type: "input",
+        name: "sale_item_three",
+        message: "Enter next item ID if applicable",
+      },
+      {
+        type: "input",
+        name: "sale_item_four",
+        message: "Enter next item ID if appplicable",
+      },
+      {
+        type: "input",
+        name: "sale_item_five",
+        message: "Enter next item ID if applicable",
+      },
+      {
+        type: "input",
+        name: "sale_total",
+        message: "Enter total cost of transaction",
+      },
+    ])
+    .then((answers) => {
+      const {
+        sale_date,
+        sale_employee,
+        sale_store,
+        sale_item,
+        sale_item_two,
+        sale_item_three,
+        sale_item_four,
+        sale_item_five,
+        sale_total,
+      } = answers;
+      connection.query(
+        sql,
+        [
+          sale_date,
+          sale_employee,
+          sale_store,
+          sale_item,
+          sale_item_two,
+          sale_item_three,
+          sale_item_four,
+          sale_item_five,
+          sale_total,
+        ],
+        (err, resp) => {
+          if (err) throw err;
+          console.log("New sale has been added!");
+          viewSales();
+        }
+      );
+    });
+};
+
+updateStore = () => {
+  console.log("Updating a store..\n");
+  const storeSql = `SELECT * FROM store`;
+  connection.query(storeSql, (err, resp) => {
+    if (err) throw err;
+    const stores = resp.map({
+      id,
+      store_name,
+      store_number,
+      store_address,
+      store_open,
+      store_parent,
+    }) => ({ name: store_name, value: id }) });
 };
