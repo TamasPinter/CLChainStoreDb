@@ -476,7 +476,6 @@ updateStore = () => {
           choices: stores,
         },
       ])
-      // update all fields for selected store
       .then((answers) => {
         const { store_name } = answers;
         const sql = `UPDATE store SET store_name = ?, store_address = ?, store_open = ?, chain_id = ? WHERE id = ?`;
@@ -519,4 +518,215 @@ updateStore = () => {
   });
 };
 
-updateEmployee = () => {};
+updateEmployee = () => {
+  console.log("Updating an employee..\n");
+  const employeeSql = `SELECT * FROM employee`;
+  connection.query(employeeSql, (err, resp) => {
+    if (err) throw err;
+    const employees = resp.map({ name: "employee name", value: "id" });
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "employee_name",
+          message: "Which employee would you like to update?",
+          choices: employees,
+        },
+      ])
+      .then((answers) => {
+        const { employee_name } = answers;
+        const sql = `UPDATE employee SET employee_name = ?, hired_date = ?, contact_number = ?, store_id = ? WHERE id = ?`;
+        inquirer
+          .prompt([
+            {
+              type: "input",
+              name: "employee_name",
+              message: "What is the employee's full name?",
+            },
+            {
+              type: "input",
+              name: "hired_date",
+              message: "When was the employee hired? (YYYY-MM-DD)",
+            },
+            {
+              type: "input",
+              name: "contact_number",
+              message: "What is the employee's contact number?",
+            },
+            {
+              type: "input",
+              name: "store_id",
+              message: "What is this employee's store ID?",
+            },
+          ])
+          .then((answers) => {
+            const { employee_name, hired_date, contact_number, store_id } =
+              answers;
+            connection.query(
+              sql,
+              [employee_name, hired_date, contact_number, store_id],
+              (err, resp) => {
+                if (err) throw err;
+                console.log("Employee has been updated!");
+                viewEmployeeData();
+              }
+            );
+          });
+      });
+  });
+};
+
+updateItem = () => {
+  console.log("Updating an item..\n");
+  const itemSql = `SELECT * FROM item`;
+  connection.query(itemSql, (err, resp) => {
+    if (err) throw err;
+    const items = resp.map({ name: "item_name", value: "id" });
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "item_name",
+          message: "Which item would you like to update?",
+          choices: items,
+        },
+      ])
+      .then((answers) => {
+        const { item_name } = answers;
+        const sql = `UPDATE item SET item_name = ?, item_description = ?, item_price = ? WHERE id = ?`;
+        inquirer
+          .prompt([
+            {
+              type: "input",
+              name: "item_name",
+              message: "What is this item called?",
+            },
+            {
+              type: "input",
+              name: "item_description",
+              message: "Give a brief description of the item",
+            },
+            {
+              type: "input",
+              name: "item_price",
+              message: "How much does the item cost?",
+            },
+          ])
+          .then((answers) => {
+            const { item_name, item_description, item_price } = answers;
+            connection.query(
+              sql,
+              [item_name, item_description, item_price],
+              (err, res) => {
+                if (err) throw err;
+                console.log("Item has been updated!");
+                viewItems();
+              }
+            );
+          });
+      });
+  });
+};
+
+updateSale = () => {
+  console.log("Updating a sale..\n");
+  const saleSql = `SELECT * FROM sale`;
+  connection.query(saleSql, (err, resp) => {
+    if (err) throw err;
+    const sales = resp.map({ name: "sale_date", value: "id" });
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "sale_date",
+          message: "Which sale would you like to update?",
+        },
+      ])
+      .then((answers) => {
+        const { sale_date } = answers;
+        const sql = `UPDATE sale SET sale_date = ?, sale_employee = ?, sale_store = ?, sale_item = ?, sale_item_two = ?, sale_item_three = ?, sale_item_four = ?, sale_item_five = ?, sale_total = ? WHERE id = ?`;
+        inquirer
+          .prompt([
+            {
+              type: "input",
+              name: "sale_date",
+              message: "Enter date of transaction (YYYY-MM-DD)",
+            },
+            {
+              type: "input",
+              name: "sale_employee",
+              message: "Enter employee ID",
+            },
+            {
+              type: "input",
+              name: "sale_store",
+              message: "Enter store ID",
+            },
+            {
+              type: "input",
+              name: "sale_item",
+              message: "Enter item ID",
+            },
+            {
+              type: "input",
+              name: "sale_item_two",
+              message: "Enter next item ID if applicable",
+            },
+            {
+              type: "input",
+              name: "sale_item_three",
+              message: "Enter next item ID if applicable",
+            },
+            {
+              type: "input",
+              name: "sale_item_four",
+              message: "Enter next item ID if applicable",
+            },
+            {
+              type: "input",
+              name: "sale_item_five",
+              message: "Enter next item ID if applicable",
+            },
+            {
+              type: "input",
+              name: "sale_total",
+              message: "Enter total cost of transaction",
+            },
+          ])
+          .then((answers) => {
+            const {
+              sale_date,
+              sale_employee,
+              sale_store,
+              sale_item,
+              sale_item_two,
+              sale_item_three,
+              sale_item_four,
+              sale_item_five,
+              sale_total,
+            } = answers;
+            connection.query(
+              sql,
+              [
+                sale_date,
+                sale_employee,
+                sale_store,
+                sale_item,
+                sale_item_two,
+                sale_item_three,
+                sale_item_four,
+                sale_item_five,
+                sale_total,
+              ],
+              (err, resp) => {
+                if (err) throw err;
+                console.log("Sale has been updated!");
+                viewSales();
+              }
+            );
+          });
+      });
+  });
+};
+
+deleteStore = () => {};
