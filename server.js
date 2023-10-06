@@ -466,12 +466,57 @@ updateStore = () => {
   const storeSql = `SELECT * FROM store`;
   connection.query(storeSql, (err, resp) => {
     if (err) throw err;
-    const stores = resp.map({
-      id,
-      store_name,
-      store_number,
-      store_address,
-      store_open,
-      store_parent,
-    }) => ({ name: store_name, value: id }) });
+    const stores = resp.map({ name: "store name", value: "id" });
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "store_name",
+          message: "Which store would you like to update?",
+          choices: stores,
+        },
+      ])
+      // update all fields for selected store
+      .then((answers) => {
+        const { store_name } = answers;
+        const sql = `UPDATE store SET store_name = ?, store_address = ?, store_open = ?, chain_id = ? WHERE id = ?`;
+        inquirer
+          .prompt([
+            {
+              type: "input",
+              name: "store_name",
+              message: "What is the name of the store?",
+            },
+            {
+              type: "input",
+              name: "store_address",
+              message: "What is the address of the store?",
+            },
+            {
+              type: "input",
+              name: "store_open",
+              message: "When did the store open?(YYYY-MM-DD)",
+            },
+            {
+              type: "input",
+              name: "chain_id",
+              message: "What is the chain ID?",
+            },
+          ])
+          .then((answers) => {
+            const { store_name, store_address, store_open, chain_id } = answers;
+            connection.query(
+              sql,
+              [store_name, store_address, store_open, chain_id],
+              (err, resp) => {
+                if (err) throw err;
+                console.log("Store has been updated!");
+                viewStoreInfo();
+              }
+            );
+          });
+      });
+  });
 };
+
+updateEmployee = () => {};
