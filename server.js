@@ -24,7 +24,10 @@ const mainMenu = () => {
       {
         type: "list",
         name: "choices",
-        message: "Welcome to Value Electronics, what would you like to view?",
+        message:
+          "------------------------------------------------------------------------------------------------\
+                                                                                                            Welcome to Value Electronics, what would you like to view?                                          \
+           -------------------------------------------------------------------------------------------------- ",
         choices: [
           "View basic chain info",
           "View chain info with number of stores and sales",
@@ -729,4 +732,121 @@ updateSale = () => {
   });
 };
 
-deleteStore = () => {};
+deleteStore = () => {
+  const storeSql = `SELECT * FROM store`;
+  connection.query(storeSql, (err, resp) => {
+    if (err) throw err;
+    const stores = resp.map({ name: "store name", value: "id" });
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "store_name",
+          message: "Which store would you like to delete?",
+          choices: stores,
+        },
+      ])
+      .then((answers) => {
+        const { store_name } = answers;
+        const sql = `DELETE FROM store WHERE id = ?`;
+        connection.query(sql, [store_name], (err, resp) => {
+          if (err) throw err;
+          console.log("Store has been deleted!");
+          viewStoreInfo();
+        });
+      });
+  });
+};
+
+deleteEmployee = () => {
+  const employeeSql = `SELECT * FROM employee`;
+  connection.query(employeeSql, (err, resp) => {
+    if (err) throw err;
+
+    const employees = resp.map(({ id, employee_name }) => ({
+      name: employee_name,
+      value: id,
+    }));
+
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "employee_name",
+          message: "Which employee would you like to delete?",
+          choices: employees,
+        },
+      ])
+      .then((empChoice) => {
+        const employee = empChoice.employee_name;
+        const sql = `DELETE FROM employee WHERE id = ?`;
+        connection.query(sql, employee, (err, resp) => {
+          if (err) throw err;
+          console.log("Employee has been deleted!");
+          viewEmployeeData();
+        });
+      });
+  });
+};
+
+deleteItem = () => {
+  const itemSql = `SELECT * FROM item`;
+  connection.query(itemSql, (err, resp) => {
+    if (err) throw err;
+
+    const items = resp.map(({ id, item_name }) => ({
+      name: item_name,
+      value: id,
+    }));
+
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "item_name",
+          message: "Which item would you like to delete?",
+          choices: items,
+        },
+      ])
+      .then((itemChoice) => {
+        const item = itemChoice.item_name;
+        const sql = `DELETE FROM item WHERE id = ?`;
+        connection.query(sql, item, (err, resp) => {
+          if (err) throw err;
+          console.log("Item has been deleted!");
+          viewItems();
+        });
+      });
+  });
+};
+
+deleteSale = () => {
+  const saleSql = `SELECT * FROM sale`;
+  connection.query(saleSql, (err, resp) => {
+    if (err) throw err;
+
+    const sales = resp.map(({ id, sale_date }) => ({
+      name: sale_date,
+      value: id,
+    }));
+
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "sale_date",
+          message: "Which sale would you like to delete?",
+          choices: sales,
+        },
+      ])
+      .then((saleChoice) => {
+        const sale = saleChoice.sale_date;
+        const sql = `DELETE FROM sale WHERE id = ?`;
+        connection.query(sql, sale, (err, resp) => {
+          if (err) throw err;
+          console.log("Sale has been deleted!");
+          viewSales();
+        });
+      });
+  });
+};
