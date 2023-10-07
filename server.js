@@ -141,11 +141,36 @@ viewBasicInfo = () => {
 
 viewChainInfo = () => {
   console.log("Showing Chain info with number of stores and sale figures..\n");
-  const sql = `SELECT chain.id AS "Chain ID", chain.chain_name AS "Chain name", chain.chain_description AS "Chain Description", chain.chain_established AS "Chain Established", chain.chain_headquarters AS "Chain Headquarters", COUNT(store.id) AS "Number of Stores", SUM(sale.sale_total) FROM chain
-  LEFT JOIN store ON chain.id = store.store_parent
-  LEFT JOIN sale ON store.id = sale.sale_store
-  GROUP BY chain.id
-  ORDER BY chain.id`;
+  const sql = `SELECT chain.id AS "Chain ID",
+  chain.chain_name AS "Chain name",
+  chain.chain_description AS "Chain Description",
+  chain.chain_established AS "Chain Established",
+  chain.chain_headquarters AS "Chain Headquarters",
+  store_count.count_stores AS "Number of Stores",
+  COALESCE(sale_sum.sum_total_sales, 0) AS "Total Sales"
+FROM
+  chain
+LEFT JOIN (
+  SELECT
+      store_parent,
+      COUNT(id) AS count_stores
+  FROM
+      store
+  GROUP BY
+      store_parent
+) AS store_count ON chain.id = store_count.store_parent
+LEFT JOIN (
+  SELECT
+      sale_store,
+      SUM(sale_total) AS sum_total_sales
+  FROM
+      sale
+  GROUP BY
+      sale_store
+) AS sale_sum ON chain.id = sale_sum.sale_store
+ORDER BY
+  chain.id 
+`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
     console.table(resp);
@@ -170,7 +195,7 @@ viewStoresBySales = () => {
   console.log("Showing all stores with sales figures..\n");
   const sql = `SELECT store.id AS "Store ID", store.store_name AS "Store Name", store.store_address AS "Store Address", store.store_open AS "Store Opening", COUNT(employee.id) AS "Number of Employees", SUM(sale.sale_total) AS "Total Sales" FROM store
     LEFT JOIN employee ON store.id = employee.store_id
-    LEFT JOIN sale ON employee.id = sale.employee_id
+    LEFT JOIN sale ON employee.id = sale.sale_employee
     GROUP BY store.id
     ORDER BY SUM(sale.sale_total) DESC`;
   connection.query(sql, (err, resp) => {
