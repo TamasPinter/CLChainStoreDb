@@ -193,11 +193,29 @@ viewStoreInfo = () => {
 
 viewStoresBySales = () => {
   console.log("Showing all stores with sales figures..\n");
-  const sql = `SELECT store.id AS "Store ID", store.store_name AS "Store Name", store.store_address AS "Store Address", store.store_open AS "Store Opening", COUNT(employee.id) AS "Number of Employees", SUM(sale.sale_total) AS "Total Sales" FROM store
-    LEFT JOIN employee ON store.id = employee.store_id
-    LEFT JOIN sale ON employee.id = sale.sale_employee
-    GROUP BY store.id
-    ORDER BY SUM(sale.sale_total) DESC`;
+  const sql = `SELECT
+  store.id AS "Store ID",
+  store.store_name AS "Store Name",
+  store.store_address AS "Store Address",
+  store.store_open AS "Store Opening",
+  
+  COALESCE(sale_sum.sum_total_sales, 0) AS "Total Sales"
+FROM
+  store
+
+LEFT JOIN (
+  SELECT
+      sale_store,
+      SUM(sale_total) AS sum_total_sales
+  FROM
+      sale
+  GROUP BY
+      sale_store
+) AS sale_sum ON store.id = sale_sum.sale_store
+GROUP BY
+  store.id, store.store_name, store.store_address, store.store_open
+ORDER BY
+  SUM(sale_sum.sum_total_sales)`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
     console.table(resp);
@@ -207,7 +225,7 @@ viewStoresBySales = () => {
 
 viewEmployeeData = () => {
   console.log("Showing Employee data..\n");
-  const sql = `SELECT employee.id AS "Employee ID", employee.employee_name AS "Employee Name", employee.hired_date AS "Hired Date", employee.contact_number AS "Contact Number", employee.sales_made AS "Sales Made" store.store_name AS "Store Name" FROM employee
+  const sql = `SELECT employee.id AS "Employee ID", employee.employee_name AS "Employee Name", employee.hired_date AS "Hired Date", employee.contact_number AS "Contact Number", employee.sales_made AS "Sales Made", store.store_name AS "Store Name" FROM employee
   LEFT JOIN store ON employee.store_id = store.id
   ORDER BY employee.id`;
   connection.query(sql, (err, resp) => {
@@ -219,11 +237,23 @@ viewEmployeeData = () => {
 
 viewEmployeesBySales = () => {
   console.log("Showing Employees by their sales figures..\n");
-  const sql = `SELECT employee.id AS "Employee ID", employee.employee_name AS "Employee Name", employee.hired_date AS "Hired Date", employee.sales_made AS "Sales Made", SUM(sale.sale_total) AS "Total Sales" store.store_name AS "Store Name" FROM employee
-    LEFT JOIN store ON employee.store_id = store.id
-    LEFT JOIN sale ON employee.id = sale.employee_id
-    GROUP BY employee.id
-    ORDER BY SUM(sale.sale_total) DESC`;
+  const sql = `SELECT
+  employee.id AS "Employee ID",
+  employee.employee_name AS "Employee Name",
+  employee.hired_date AS "Hired Date",
+  employee.sales_made AS "Sales Made",
+  COALESCE(SUM(sale.sale_total), 0) AS "Total Sales",
+  store.store_name AS "Store Name"
+FROM
+  employee
+LEFT JOIN
+  store ON employee.store_id = store.id
+LEFT JOIN
+  sale ON employee.id = sale.sale_employee
+GROUP BY
+  employee.id
+ORDER BY
+  SUM(sale.sale_total) DESC;`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
     console.table(resp);
@@ -245,8 +275,8 @@ viewItems = () => {
 viewSales = () => {
   console.log("Showing all sales..\n");
   const sql = `SELECT sale.id AS "Sale ID", sale.sale_date AS "Sale Date", sale.sale_employee AS "Sale Employee", sale.sale_store AS "Sale Store", sale.sale_item AS "Sale Item", sale.sale_item_two AS "Sale Item Two", sale.sale_item_three AS "Sale Item Three", sale.sale_item_four AS "Sale Item Four", sale.sale_item_five AS "Sale Item Five", sale.sale_total AS "Sale Total" FROM sale
-  LEFT JOIN employee ON sale.employee_id = employee.id
-  LEFT JOIN store ON sale.store_id = store.id
+  LEFT JOIN employee ON sale.sale_employee = employee.id
+  LEFT JOIN store ON sale.sale_store = store.id
   ORDER BY sale.id`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
@@ -258,8 +288,8 @@ viewSales = () => {
 viewSalesByValue = () => {
   console.log("Showing all sales by value..\n");
   const sql = `SELECT sale.id AS "Sale ID", sale.sale_date AS "Sale Date", sale.sale_employee AS "Sale Employee", sale.sale_store AS "Sale Store", sale.sale_item AS "Sale Item", sale.sale_item_two AS "Sale Item Two", sale.sale_item_three AS "Sale Item Three", sale.sale_item_four AS "Sale Item Four", sale.sale_item_five AS "Sale Item Five", sale.sale_total AS "Sale Total" FROM sale
-    LEFT JOIN employee ON sale.employee_id = employee.id
-    LEFT JOIN store ON sale.store_id = store.id
+    LEFT JOIN employee ON sale.sale_employee = employee.id
+    LEFT JOIN store ON sale.sale_store = store.id
     ORDER BY sale.sale_total DESC`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
@@ -270,14 +300,21 @@ viewSalesByValue = () => {
 
 viewDetailedSales = () => {
   console.log("Showing more detailed sale data..\n");
-  const sql = `SELECT sale.id AS "Sale ID", sale.sale_date, AS "Sale Date", sale.sale_employee AS "Sale Employee", sale.sale_store AS "Sale Store", sale.sale_item AS "Sale Item", sale.sale_item_two AS "Sale Item Two", sale.sale_item_three AS "Sale Item Three", sale.sale_item_four AS "Sale Item Four", sale.sale_item_five AS "Sale Item Five", sale.sale_total AS "Sale Total" FROM sale
-  LEFT JOIN employee ON sale.employee_id = employee.id
-  LEFT JOIN store ON sale.store_id = store.id
-  LEFT JOIN item ON sale.item_id = item.id
-  LEFT JOIN item ON sale.item_two_id = item.id
-  LEFT JOIN item ON sale.item_three_id = item.id
-  LEFT JOIN item ON sale.item_four_id = item.id
-  LEFT JOIN item ON sale.item_five_id = item.id
+  const sql = `SELECT sale.id AS "Sale ID", sale.sale_date AS "Sale Date", sale.sale_employee AS "Sale Employee", employee.employee_name AS "Employee Name", sale.sale_store AS "Sale Store", sale.sale_item AS "Sale Item", sale.sale_item_two AS "Sale Item Two", sale.sale_item_three AS "Sale Item Three", sale.sale_item_four AS "Sale Item Four", sale.sale_item_five AS "Sale Item Five", sale.sale_total AS "Sale Total" FROM sale
+  LEFT JOIN employee ON sale.sale_employee = employee.id
+  LEFT JOIN store ON sale.sale_store = store.id
+  LEFT JOIN
+  store ON sale.store_id = store.id
+LEFT JOIN
+  item AS item_one ON sale.item_id = item_one.id
+LEFT JOIN
+  item AS item_two ON sale.item_two_id = item_two.id
+LEFT JOIN
+  item AS item_three ON sale.item_three_id = item_three.id
+LEFT JOIN
+  item AS item_four ON sale.item_four_id = item_four.id
+LEFT JOIN
+  item AS item_five ON sale.item_five_id = item_five.id
   ORDER BY sale.id`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
@@ -288,13 +325,18 @@ viewDetailedSales = () => {
 
 addStore = () => {
   console.log("Adding a new store..\n");
-  const sql = `INSERT INTO store (store_name, store_address, store_open, chain_id) VALUES (?, ?, ?, ?)`;
+  const sql = `INSERT INTO store (store_name, store_number, store_address, store_open, store_parent) VALUES (?, ?, ?, ?, ?)`;
   inquirer
     .prompt([
       {
         type: "input",
         name: "store_name",
         message: "What is the name of the store?",
+      },
+      {
+        type: "input",
+        name: "store_number",
+        message: "What is this store's number?",
       },
       {
         type: "input",
@@ -308,15 +350,21 @@ addStore = () => {
       },
       {
         type: "input",
-        name: "chain_id",
+        name: "store_parent",
         message: "What is the chain ID?",
       },
     ])
     .then((answers) => {
-      const { store_name, store_address, store_open, chain_id } = answers;
+      const {
+        store_name,
+        store_number,
+        store_address,
+        store_open,
+        store_parent,
+      } = answers;
       connection.query(
         sql,
-        [store_name, store_address, store_open, chain_id],
+        [store_name, store_number, store_address, store_open, store_parent],
         (err, resp) => {
           if (err) throw err;
           console.log("New store added!");
