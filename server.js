@@ -417,8 +417,8 @@ addEmployee = () => {
 
 addItem = () => {
   console.log("Adding a new item..\n");
-  const sql = `INSERT INTO item (item_name, item_description, item_price)
-  VALUES (?, ?, ?,)`;
+  const sql = `INSERT INTO item (item_name, item_description, item_department, item_price)
+  VALUES (?, ?, ?, ?)`;
   inquirer
     .prompt([
       {
@@ -433,15 +433,21 @@ addItem = () => {
       },
       {
         type: "input",
+        name: "item_department",
+        message: "What department is this item in?",
+      },
+      {
+        type: "input",
         name: "item_price",
         message: "How much does the item cost?",
       },
     ])
     .then((answers) => {
-      const { item_name, item_description, item_price } = answers;
+      const { item_name, item_description, item_department, item_price } =
+        answers;
       connection.query(
         sql,
-        [item_name, item_description, item_price],
+        [item_name, item_description, item_department, item_price],
         (err, resp) => {
           if (err) throw err;
           console.log("New item has been added!");
@@ -504,6 +510,11 @@ addSale = () => {
       },
     ])
     .then((answers) => {
+      for (const key in answers) {
+        if (answers[key] === "") {
+          answers[key] = null;
+        }
+      }
       const {
         sale_date,
         sale_employee,
