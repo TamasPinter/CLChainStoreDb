@@ -547,53 +547,83 @@ addSale = () => {
       );
     });
 };
-
 updateStore = () => {
   console.log("Updating a store..\n");
   const storeSql = `SELECT * FROM store`;
   connection.query(storeSql, (err, resp) => {
     if (err) throw err;
-    const stores = resp.map({ name: "store name", value: "id" });
+    const stores = resp.map(({ store_name, id }) => ({
+      name: store_name,
+      value: id,
+    }));
     inquirer
       .prompt([
         {
           type: "list",
-          name: "store_name",
+          name: "selected_store_id",
           message: "Which store would you like to update?",
           choices: stores,
         },
       ])
       .then((answers) => {
-        const { store_name } = answers;
-        const sql = `UPDATE store SET store_name = ?, store_address = ?, store_open = ?, chain_id = ? WHERE id = ?`;
+        const { selected_store_id } = answers;
+        const selectedStore = resp.find(
+          (store) => store.id === selected_store_id
+        );
+
+        const updateFields = [
+          selectedStore.store_name && "store_name = ?",
+          selectedStore.store_address && "store_address = ?",
+          selectedStore.store_open && "store_open = ?",
+          selectedStore.chain_id && "chain_id = ?",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const sql = `UPDATE store SET ${updateFields} WHERE id = ?`;
+
+        const values = [];
+        if (selectedStore.store_name) values.push(selectedStore.store_name);
+        if (selectedStore.store_address)
+          values.push(selectedStore.store_address);
+        if (selectedStore.store_open) values.push(selectedStore.store_open);
+        if (selectedStore.chain_id) values.push(selectedStore.chain_id);
+        values.push(selected_store_id);
+
         inquirer
           .prompt([
             {
               type: "input",
               name: "store_name",
-              message: "What is the name of the store?",
+              message: "What is the updated name of the store?",
             },
             {
               type: "input",
               name: "store_address",
-              message: "What is the address of the store?",
+              message: "What is the updated address of the store?",
             },
             {
               type: "input",
               name: "store_open",
-              message: "When did the store open?(YYYY-MM-DD)",
+              message: "When did the store open? (YYYY-MM-DD)",
             },
             {
               type: "input",
               name: "chain_id",
-              message: "What is the chain ID?",
+              message: "What is the updated chain ID?",
             },
           ])
           .then((answers) => {
             const { store_name, store_address, store_open, chain_id } = answers;
             connection.query(
               sql,
-              [store_name, store_address, store_open, chain_id],
+              [
+                store_name || selectedStore.store_name,
+                store_address || selectedStore.store_address,
+                store_open || selectedStore.store_open,
+                chain_id || selectedStore.chain_id,
+                selected_store_id,
+              ],
               (err, resp) => {
                 if (err) throw err;
                 console.log("Store has been updated!");
@@ -610,40 +640,67 @@ updateEmployee = () => {
   const employeeSql = `SELECT * FROM employee`;
   connection.query(employeeSql, (err, resp) => {
     if (err) throw err;
-    const employees = resp.map({ name: "employee name", value: "id" });
+    const employees = resp.map(({ id, employee_name }) => ({
+      value: id,
+      name: employee_name,
+    }));
     inquirer
       .prompt([
         {
           type: "list",
-          name: "employee_name",
+          name: "selected_employee_id",
           message: "Which employee would you like to update?",
           choices: employees,
         },
       ])
       .then((answers) => {
-        const { employee_name } = answers;
-        const sql = `UPDATE employee SET employee_name = ?, hired_date = ?, contact_number = ?, store_id = ? WHERE id = ?`;
+        const { selected_employee_id } = answers;
+        const selectedEmployee = resp.find(
+          (employee) => employee.id === selected_employee_id
+        );
+
+        const updateFields = [
+          selectedEmployee.employee_name && "employee_name = ?",
+          selectedEmployee.hired_date && "hired_date = ?",
+          selectedEmployee.contact_number && "contact_number = ?",
+          selectedEmployee.store_id && "store_id = ?",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const sql = `UPDATE employee SET ${updateFields} WHERE id = ?`;
+
+        const values = [];
+        if (selectedEmployee.employee_name)
+          values.push(selectedEmployee.employee_name);
+        if (selectedEmployee.hired_date)
+          values.push(selectedEmployee.hired_date);
+        if (selectedEmployee.contact_number)
+          values.push(selectedEmployee.contact_number);
+        if (selectedEmployee.store_id) values.push(selectedEmployee.store_id);
+        values.push(selected_employee_id);
+
         inquirer
           .prompt([
             {
               type: "input",
               name: "employee_name",
-              message: "What is the employee's full name?",
+              message: "What is the updated full name of the employee?",
             },
             {
               type: "input",
               name: "hired_date",
-              message: "When was the employee hired? (YYYY-MM-DD)",
+              message: "What is the updated hiring date? (YYYY-MM-DD)",
             },
             {
               type: "input",
               name: "contact_number",
-              message: "What is the employee's contact number?",
+              message: "What is the updated contact number of the employee?",
             },
             {
               type: "input",
               name: "store_id",
-              message: "What is this employee's store ID?",
+              message: "What is the updated store ID of the employee?",
             },
           ])
           .then((answers) => {
@@ -651,7 +708,13 @@ updateEmployee = () => {
               answers;
             connection.query(
               sql,
-              [employee_name, hired_date, contact_number, store_id],
+              [
+                employee_name || selectedEmployee.employee_name,
+                hired_date || selectedEmployee.hired_date,
+                contact_number || selectedEmployee.contact_number,
+                store_id || selectedEmployee.store_id,
+                selected_employee_id,
+              ],
               (err, resp) => {
                 if (err) throw err;
                 console.log("Employee has been updated!");
