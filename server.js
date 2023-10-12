@@ -731,43 +731,79 @@ updateItem = () => {
   const itemSql = `SELECT * FROM item`;
   connection.query(itemSql, (err, resp) => {
     if (err) throw err;
-    const items = resp.map({ name: "item_name", value: "id" });
+    const items = resp.map(({ id, item_name }) => ({
+      value: id,
+      name: item_name,
+    }));
     inquirer
       .prompt([
         {
           type: "list",
-          name: "item_name",
+          name: "selected_item_id",
           message: "Which item would you like to update?",
           choices: items,
         },
       ])
       .then((answers) => {
-        const { item_name } = answers;
-        const sql = `UPDATE item SET item_name = ?, item_description = ?, item_price = ? WHERE id = ?`;
+        const { selected_item_id } = answers;
+        const selectedItem = resp.find((item) => item.id === selected_item_id);
+
+        const updateFields = [
+          selectedItem.item_name && "item_name = ?",
+          selectedItem.item_description && "item_description = ?",
+          selectedItem.item_department && "item_department = ?",
+          selectedItem.item_price && "item_price = ?",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const sql = `UPDATE item SET ${updateFields} WHERE id = ?`;
+
+        const values = [];
+        if (selectedItem.item_name) values.push(selectedItem.item_name);
+        if (selectedItem.item_description)
+          values.push(selectedItem.item_description);
+        if (selectedItem.item_department)
+          values.push(selectedItem.item_department);
+        if (selectedItem.item_price) values.push(selectedItem.item_price);
+        values.push(selected_item_id);
+
         inquirer
           .prompt([
             {
               type: "input",
               name: "item_name",
-              message: "What is this item called?",
+              message: "What is the updated name of the item?",
             },
             {
               type: "input",
               name: "item_description",
-              message: "Give a brief description of the item",
+              message: "What is the updated description of the item?",
+            },
+            {
+              type: "input",
+              name: "item_description",
+              message: "What is the updated department of the item?",
             },
             {
               type: "input",
               name: "item_price",
-              message: "How much does the item cost?",
+              message: "What is the updated price of the item?",
             },
           ])
           .then((answers) => {
-            const { item_name, item_description, item_price } = answers;
+            const { item_name, item_description, item_department, item_price } =
+              answers;
             connection.query(
               sql,
-              [item_name, item_description, item_price],
-              (err, res) => {
+              [
+                item_name || selectedItem.item_name,
+                item_description || selectedItem.item_description,
+                item_department || selectedItem.item_department,
+                item_price || selectedItem.item_price,
+                selected_item_id,
+              ],
+              (err, resp) => {
                 if (err) throw err;
                 console.log("Item has been updated!");
                 viewItems();
@@ -783,64 +819,97 @@ updateSale = () => {
   const saleSql = `SELECT * FROM sale`;
   connection.query(saleSql, (err, resp) => {
     if (err) throw err;
-    const sales = resp.map({ name: "sale_date", value: "id" });
+    const sales = resp.map(({ id, sale_date }) => ({
+      value: id,
+      name: sale_date,
+    }));
     inquirer
       .prompt([
         {
           type: "list",
-          name: "sale_date",
+          name: "selected_sale_id",
           message: "Which sale would you like to update?",
+          choices: sales,
         },
       ])
       .then((answers) => {
-        const { sale_date } = answers;
-        const sql = `UPDATE sale SET sale_date = ?, sale_employee = ?, sale_store = ?, sale_item = ?, sale_item_two = ?, sale_item_three = ?, sale_item_four = ?, sale_item_five = ?, sale_total = ? WHERE id = ?`;
+        const { selected_sale_id } = answers;
+        const selectedSale = resp.find((sale) => sale.id === selected_sale_id);
+
+        const updateFields = [
+          selectedSale.sale_date && "sale_date = ?",
+          selectedSale.sale_employee && "sale_employee = ?",
+          selectedSale.sale_store && "sale_store = ?",
+          selectedSale.sale_item && "sale_item = ?",
+          selectedSale.sale_item_two && "sale_item_two = ?",
+          selectedSale.sale_item_three && "sale_item_three = ?",
+          selectedSale.sale_item_four && "sale_item_four = ?",
+          selectedSale.sale_item_five && "sale_item_five = ?",
+          selectedSale.sale_total && "sale_total = ?",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const values = [
+          selectedSale.sale_date,
+          selectedSale.sale_employee,
+          selectedSale.sale_store,
+          selectedSale.sale_item,
+          selectedSale.sale_item_two,
+          selectedSale.sale_item_three,
+          selectedSale.sale_item_four,
+          selectedSale.sale_item_five,
+          selectedSale.sale_total,
+        ];
+
+        const sql = `UPDATE sale SET ${updateFields} WHERE id = ?`;
+
         inquirer
           .prompt([
             {
               type: "input",
               name: "sale_date",
-              message: "Enter date of transaction (YYYY-MM-DD)",
+              message: "What is the updated date of the sale? (YYYY-MM-DD)",
             },
             {
               type: "input",
               name: "sale_employee",
-              message: "Enter employee ID",
+              message: "What is the employee's ID?",
             },
             {
               type: "input",
               name: "sale_store",
-              message: "Enter store ID",
+              message: "What is the sale store ID?",
             },
             {
               type: "input",
               name: "sale_item",
-              message: "Enter item ID",
+              message: "What is the sale item ID?",
             },
             {
               type: "input",
               name: "sale_item_two",
-              message: "Enter next item ID if applicable",
+              message: "What second item was sold? (if applicable)",
             },
             {
               type: "input",
               name: "sale_item_three",
-              message: "Enter next item ID if applicable",
+              message: "What third item was sold? (if applicable)",
             },
             {
               type: "input",
               name: "sale_item_four",
-              message: "Enter next item ID if applicable",
+              message: "What fourth item was sold? (if applicable)",
             },
             {
               type: "input",
               name: "sale_item_five",
-              message: "Enter next item ID if applicable",
+              message: "What is the fifth item was sold? (if applicable)",
             },
             {
               type: "input",
               name: "sale_total",
-              message: "Enter total cost of transaction",
+              message: "What is the updated total of the sale?",
             },
           ])
           .then((answers) => {
@@ -855,25 +924,25 @@ updateSale = () => {
               sale_item_five,
               sale_total,
             } = answers;
-            connection.query(
-              sql,
-              [
-                sale_date,
-                sale_employee,
-                sale_store,
-                sale_item,
-                sale_item_two,
-                sale_item_three,
-                sale_item_four,
-                sale_item_five,
-                sale_total,
-              ],
-              (err, resp) => {
-                if (err) throw err;
-                console.log("Sale has been updated!");
-                viewSales();
-              }
+
+            values.push(
+              sale_date || null,
+              sale_employee || null,
+              sale_store || null,
+              sale_item || null,
+              sale_item_two || null,
+              sale_item_three || null,
+              sale_item_four || null,
+              sale_item_five || null,
+              sale_total || null,
+              selected_sale_id
             );
+
+            connection.query(sql, values, (err, resp) => {
+              if (err) throw err;
+              console.log("Sale has been updated!");
+              viewSales();
+            });
           });
       });
   });
@@ -883,7 +952,11 @@ deleteStore = () => {
   const storeSql = `SELECT * FROM store`;
   connection.query(storeSql, (err, resp) => {
     if (err) throw err;
-    const stores = resp.map({ name: "store name", value: "id" });
+    const stores = resp.map(({ id, store_name }) => ({
+      name: store_name,
+      value: id,
+    }));
+
     inquirer
       .prompt([
         {
