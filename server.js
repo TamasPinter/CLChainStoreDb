@@ -231,10 +231,27 @@ viewItems = () => {
 
 viewSales = () => {
   console.log("Showing all sales..\n");
-  const sql = `SELECT sale.id AS "Sale ID", sale.sale_date AS "Sale Date", sale.sale_employee AS "Sale Employee", sale.sale_store AS "Sale Store", sale.sale_item AS "Sale Item", sale.sale_item_two AS "Sale Item Two", sale.sale_item_three AS "Sale Item Three", sale.sale_item_four AS "Sale Item Four", sale.sale_item_five AS "Sale Item Five", sale.sale_total AS "Sale Total" FROM sale
+  const sql = `SELECT 
+    sale.id AS "Sale ID", 
+    sale.sale_date AS "Sale Date", 
+    sale.sale_employee AS "Sale Employee", 
+    sale.sale_store AS "Sale Store", 
+    item1.item_name AS "Sale Item", 
+    item2.item_name AS "Sale Item Two", 
+    item3.item_name AS "Sale Item Three", 
+    item4.item_name AS "Sale Item Four", 
+    item5.item_name AS "Sale Item Five", 
+    sale.sale_total AS "Sale Total" 
+  FROM sale
   LEFT JOIN employee ON sale.sale_employee = employee.id
   LEFT JOIN store ON sale.sale_store = store.id
+  LEFT JOIN item AS item1 ON sale.sale_item = item1.id
+  LEFT JOIN item AS item2 ON sale.sale_item_two = item2.id
+  LEFT JOIN item AS item3 ON sale.sale_item_three = item3.id
+  LEFT JOIN item AS item4 ON sale.sale_item_four = item4.id
+  LEFT JOIN item AS item5 ON sale.sale_item_five = item5.id
   ORDER BY sale.id`;
+
   connection.query(sql, (err, resp) => {
     if (err) throw err;
     console.table(resp);
