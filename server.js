@@ -30,7 +30,6 @@ const mainMenu = () => {
            -------------------------------------------------------------------------------------------------- ",
         choices: [
           "View basic chain info",
-          "View chain info with number of stores and sales",
           "View store info with employee data",
           "View all stores with sales figures in order",
           "View employee data",
@@ -59,9 +58,6 @@ const mainMenu = () => {
       const { choices } = answers;
       if (choices === "View basic chain info") {
         viewBasicInfo();
-      }
-      if (choices === "View chain info with number of stores and sales") {
-        viewChainInfo();
       }
       if (choices === "View store info with employee data") {
         viewStoreInfo();
@@ -132,45 +128,6 @@ const mainMenu = () => {
 viewBasicInfo = () => {
   console.log("Showing basic Chain info..\n");
   const sql = `SELECT chain.id AS "Chain ID", chain.chain_name AS "Chain Name", chain.chain_description AS "Chain Description", chain.chain_established AS "Chain Established", chain.chain_headquarters AS "Chain Headquarters" FROM chain`;
-  connection.query(sql, (err, resp) => {
-    if (err) throw err;
-    console.table(resp);
-    mainMenu();
-  });
-};
-
-viewChainInfo = () => {
-  console.log("Showing Chain info with number of stores and sale figures..\n");
-  const sql = `SELECT chain.id AS "Chain ID",
-  chain.chain_name AS "Chain name",
-  chain.chain_description AS "Chain Description",
-  chain.chain_established AS "Chain Established",
-  chain.chain_headquarters AS "Chain Headquarters",
-  store_count.count_stores AS "Number of Stores",
-  COALESCE(sale_sum.sum_total_sales, 0) AS "Total Sales"
-FROM
-  chain
-LEFT JOIN (
-  SELECT
-      store_parent,
-      COUNT(id) AS count_stores
-  FROM
-      store
-  GROUP BY
-      store_parent
-) AS store_count ON chain.id = store_count.store_parent
-LEFT JOIN (
-  SELECT
-      sale_store,
-      SUM(sale_total) AS sum_total_sales
-  FROM
-      sale
-  GROUP BY
-      sale_store
-) AS sale_sum ON chain.id = sale_sum.sale_store
-ORDER BY
-  chain.id 
-`;
   connection.query(sql, (err, resp) => {
     if (err) throw err;
     console.table(resp);
@@ -850,19 +807,22 @@ updateSale = () => {
           .filter(Boolean)
           .join(", ");
 
-        const values = [
-          selectedSale.sale_date,
-          selectedSale.sale_employee,
-          selectedSale.sale_store,
-          selectedSale.sale_item,
-          selectedSale.sale_item_two,
-          selectedSale.sale_item_three,
-          selectedSale.sale_item_four,
-          selectedSale.sale_item_five,
-          selectedSale.sale_total,
-        ];
-
         const sql = `UPDATE sale SET ${updateFields} WHERE id = ?`;
+
+        const values = [];
+        if (selectedSale.sale_date) values.push(selectedSale.sale_date);
+        if (selectedSale.sale_employee) values.push(selectedSale.sale_employee);
+        if (selectedSale.sale_store) values.push(selectedSale.sale_store);
+        if (selectedSale.sale_item) values.push(selectedSale.sale_item);
+        if (selectedSale.sale_item_two) values.push(selectedSale.sale_item_two);
+        if (selectedSale.sale_item_three)
+          values.push(selectedSale.sale_item_three);
+        if (selectedSale.sale_item_four)
+          values.push(selectedSale.sale_item_four);
+        if (selectedSale.sale_item_five)
+          values.push(selectedSale.sale_item_five);
+        if (selectedSale.sale_total) values.push(selectedSale.sale_total);
+        values.push(selected_sale_id);
 
         inquirer
           .prompt([
@@ -874,37 +834,37 @@ updateSale = () => {
             {
               type: "input",
               name: "sale_employee",
-              message: "What is the employee's ID?",
+              message: "What is the employee ID?",
             },
             {
               type: "input",
               name: "sale_store",
-              message: "What is the sale store ID?",
+              message: "What is the store ID?",
             },
             {
               type: "input",
               name: "sale_item",
-              message: "What is the sale item ID?",
+              message: "What is the item ID?",
             },
             {
               type: "input",
               name: "sale_item_two",
-              message: "What second item was sold? (if applicable)",
+              message: "What is the next item ID sold? (USE 1 IF NONE)",
             },
             {
               type: "input",
               name: "sale_item_three",
-              message: "What third item was sold? (if applicable)",
+              message: "What is the next item ID sold? (USE 1 IF NONE)",
             },
             {
               type: "input",
               name: "sale_item_four",
-              message: "What fourth item was sold? (if applicable)",
+              message: "What is the next item ID sold? (USE 1 IF NONE)",
             },
             {
               type: "input",
               name: "sale_item_five",
-              message: "What is the fifth item was sold? (if applicable)",
+              message: "What is the next item ID sold? (USE 1 IF NONE)",
             },
             {
               type: "input",
@@ -924,25 +884,26 @@ updateSale = () => {
               sale_item_five,
               sale_total,
             } = answers;
-
-            values.push(
-              sale_date || null,
-              sale_employee || null,
-              sale_store || null,
-              sale_item || null,
-              sale_item_two || null,
-              sale_item_three || null,
-              sale_item_four || null,
-              sale_item_five || null,
-              sale_total || null,
-              selected_sale_id
+            connection.query(
+              sql,
+              [
+                sale_date || salectedSale.sale_date,
+                sale_employee || selectedSale.sale_employee,
+                sale_store || selectedSale.sale_store,
+                sale_item || selectedSale.sale_item,
+                sale_item_two || selectedSale.sale_item_two,
+                sale_item_three || selectedSale.sale_item_three,
+                sale_item_four || selectedSale.sale_item_four,
+                sale_item_five || selectedSale.sale_item_five,
+                sale_total || selectedSale.sale_total,
+                selected_sale_id,
+              ],
+              (err, resp) => {
+                if (err) throw err;
+                console.log("Sale has been updated!");
+                viewSales();
+              }
             );
-
-            connection.query(sql, values, (err, resp) => {
-              if (err) throw err;
-              console.log("Sale has been updated!");
-              viewSales();
-            });
           });
       });
   });
